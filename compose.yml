@@ -1,0 +1,49 @@
+name: openwebui-ollama
+
+# Define environment variables at the top of the file
+x-environment: &default-environment
+  OPENAI_API_BASE_URLS: "https://api.openai.com/v1"
+  OPENAI_API_KEYS: "PASTE_YOUR_API_KEY_HERE"
+
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    volumes:
+      - ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    # entrypoint: /bin/sh
+    # command: -c "ollama run llama3.1 && sleep infinity"
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      <<: *default-environment
+    restart: always
+
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   environment:
+  #     TUNNEL_URL: http://open-webui:8080
+  #   command: "tunnel --no-autoupdate"
+  #   volumes:
+  #     - ./cloudflared:/etc/cloudflared
+  #   depends_on:
+  #     - open-webui
+
+volumes:
+  ollama:
+  open-webui:
+
+networks:
+  default:
+    driver: bridge
